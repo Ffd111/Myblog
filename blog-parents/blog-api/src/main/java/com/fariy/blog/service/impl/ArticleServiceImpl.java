@@ -2,6 +2,7 @@ package com.fariy.blog.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.fariy.blog.dao.dos.Archives;
 import com.fariy.blog.dao.mapper.ArticleMapper;
 import com.fariy.blog.dao.mapper.TagMapper;
 import com.fariy.blog.dao.pojo.Article;
@@ -64,8 +65,26 @@ public class ArticleServiceImpl implements ArticleService {
         return Result.success(coptlist(articles,false,false));
     }
 
+    @Override
+    public Result newArticles(int limit) {
+        LambdaQueryWrapper<Article> queryWrapper = new LambdaQueryWrapper<>();
+//        queryWrapper.orderByDesc(Article::getCreateDate);
+        queryWrapper.orderByAsc(Article::getCreateDate);
+        queryWrapper.select(Article::getId,Article::getTitle);
+        queryWrapper.last("limit " + limit);
+        //select id,title from ms_article order by getCreate desc limit #{limit}
+        List<Article> articles = articleMapper.selectList(queryWrapper);
+        return Result.success(coptlist(articles,false,false));
+    }
+
+    @Override
+    public Result listArchives(int limit) {
+        List<Archives> archivesList = articleMapper.listArchives();
+        return Result.success(archivesList);
+    }
+
     /**
-     * 把article复制对象属性articleVo
+     * 把article列表复制对象属性articleVo列表
      * @param records
      * @param isTag
      * @param isAuthor
@@ -79,6 +98,13 @@ public class ArticleServiceImpl implements ArticleService {
         return articleVoList;
     }
 
+    /**
+     * 把Article对象属性赋值给ArticleVo
+     * @param article
+     * @param isTag
+     * @param isAuthor
+     * @return
+     */
     private ArticleVo copy(Article article,boolean isTag,boolean isAuthor){
         ArticleVo articleVo = new ArticleVo();
         BeanUtils.copyProperties(article,articleVo);
