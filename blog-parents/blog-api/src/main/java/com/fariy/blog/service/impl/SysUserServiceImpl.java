@@ -1,5 +1,6 @@
 package com.fariy.blog.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.fariy.blog.dao.mapper.SysUserMapper;
 import com.fariy.blog.dao.pojo.SysUser;
 import com.fariy.blog.service.SysUserService;
@@ -20,5 +21,15 @@ public class SysUserServiceImpl implements SysUserService {
             sysuser.setNickname("无名");
         }
         return sysuser;
+    }
+
+    @Override
+    public SysUser findUser(String account, String password) {
+        LambdaQueryWrapper<SysUser> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(SysUser::getAccount,account);
+        queryWrapper.eq(SysUser::getPassword,password);
+        queryWrapper.select(SysUser::getAccount,SysUser::getId,SysUser::getAvatar,SysUser::getNickname);
+        queryWrapper.last("limit 1");
+        return sysUserMapper.selectOne(queryWrapper);
     }
 }
