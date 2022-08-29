@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -41,7 +42,7 @@ public class LoginServiceImpl implements LoginService {
         if (StringUtils.isBlank(account) || StringUtils.isBlank(password)){
             return Result.fail(ErrorCode.PARAMS_ERROR.getCode(), ErrorCode.PARAMS_ERROR.getMsg());
         }
-        password = DigestUtils.md5Hex(password + "slat");
+        password = DigestUtils.md5Hex(password + slat);
 
         SysUser sysUser = sysUserService.findUser(account,password);
 
@@ -50,7 +51,34 @@ public class LoginServiceImpl implements LoginService {
         }
 
         String token = JWTUtils.createToken(sysUser.getId());
-        redisTemplate.opsForValue().set("Token"+token, JSON.toJSONString(sysUser),1, TimeUnit.DAYS);
+        redisTemplate.opsForValue().set("Token_"+token, JSON.toJSONString(sysUser),1, TimeUnit.DAYS);
         return Result.success(token);
+    }
+
+    @Override
+    public SysUser checkToken(String token) {
+        if (StringUtils.isBlank(token)){
+            return null;
+        }
+        Map<String, Object> stringObjectMap = JWTUtils.checkToken(token);
+        if (stringObjectMap == null){
+            return null;
+        }
+        String userJosn = redisTemplate.opsForValue().get("Token_" + token);
+        if (StringUtils.isBlank(userJosn)){
+            return null;
+        }
+        SysUser sysUser = JSON.parseObject(userJosn, SysUser.class);
+
+        return sysUser;
+    }
+
+    @Override
+    public Result logout(String token) {
+        /**
+         * 删除redis对应token
+         */
+        redisTemplate.delete("Token_"+token);
+        return Result.success(null);
     }
 }
